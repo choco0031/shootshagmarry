@@ -228,11 +228,13 @@ io.on('connection', (socket) => {
         const { code, username, vote } = data;
         const gameState = gameStates.get(code);
         
-        if (gameState && gameState.phase === 'voting' && !gameState.votes[username]) {
-            // Validate vote has all three choices
+        if (gameState && gameState.phase === 'voting') {
+            // Validate vote has all three choices (allow overwriting previous votes)
             if (vote.shoot && vote.shag && vote.marry) {
                 gameState.votes[username] = vote;
                 console.log(`Vote cast by ${username}:`, vote);
+            } else {
+                console.log(`Incomplete vote from ${username}:`, vote);
             }
         }
     });
