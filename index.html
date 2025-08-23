@@ -1207,7 +1207,10 @@
                 }
             });
             
-            document.getElementById('lockBtn').disabled = true;
+            // Reset button text and state
+            const lockBtn = document.getElementById('lockBtn');
+            lockBtn.disabled = true;
+            lockBtn.innerHTML = '🔒 Lock In Your Choices';
         }
 
         function checkVoteCompletion() {
