@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shoot Shag Marry</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 900px;
+            width: 95%;
+            animation: slideUp 0.5s ease;
+        }
+
+        .game {
+            max-width: 1200px;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .lobby-code {
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            border: 2px dashed #667eea;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .code-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            letter-spacing: 2px;
+            margin: 10px 0;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            font-size: 14px;
+            padding: 8px 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .participants {
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .participant {
+            background: linear-gradient(45deg, #f8f9fa, #ffffff);
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .participant.host {
+            border-left-color: #ffc107;
+            background: linear-gradient(45deg, #fff8e1, #ffffff);
+        }
+
+        .participant.disconnected {
+            opacity: 0.5;
+            border-left-color: #dc3545;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            z-index: 1000;
+        }
+
+        .connection-status.connected { background: #28a745; }
+        .connection-status.connecting { background: #ffc107; color: #333; }
+        .connection-status.disconnected { background: #dc3545; }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        /* Game Styles */
+        .images-display {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .game-image {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: grab;
+            transition: all 0.3s ease;
+        }
+
+        .game-image:hover {
+            transform: scale(1.05);
+        }
+
+        .game-image.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+            cursor: grabbing;
+        }
+
+        .timer-display {
+            background: linear-gradient(45deg, #fff3e0, #f8f9fa);
+            border: 2px solid #ff9800;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .phase-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #f57c00;
+            margin-bottom: 10px;
+        }
+
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            color: #e65100;
+            margin: 10px 0;
+        }
+
+        .timer.urgent {
+            color: #d32f2f;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .discussion-info {
+            background: linear-gradient(45deg, #e8f5e8, #f8f9fa);
+            border: 2px solid #4caf50;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            font-size: 18px;
+            color: #2e7d32;
+        }
+
+        .voting-interface {
+            margin: 30px 0;
+        }
+
+        .drop-zones {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .drop-zone {
+            width: 220px;
+            height: 280px;
+            border: 3px dashed #ccc;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+            background: #f9f9f9;
+        }
+
+        .drop-zone.shoot {
+            border-color: #dc3545;
+            background: linear-gradient(45deg, #fff5f5, #f9f9f9);
+        }
+
+        .drop-zone.shag {
+            border-color: #ff6b6b;
+            background: linear-gradient(45deg, #fff0f0, #f9f9f9);
+        }
+
+        .drop-zone.marry {
+            border-color: #28a745;
+            background: linear-gradient(45deg, #f0fff0, #f9f9f9);
+        }
+
+        .drop-zone.drag-over {
+            border-style: solid;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        .drop-zone h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .drop-zone.shoot h3 { color: #dc3545; }
+        .drop-zone.shag h3 { color: #ff6b6b; }
+        .drop-zone.marry h3 { color: #28a745; }
+
+        .drop-zone .dropped-image {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            margin-top: 10px;
+        }
+
+        .lock-button {
+            background: linear-gradient(45deg, #ffc107, #ffb300);
+            color: #333;
+            font-weight: bold;
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+
+        .lock-button:disabled {
+            opacity: 0.5;
+        }
+
+        .vote-results {
+            background: #f5f5f5;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .result-categories {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .result-category {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            min-width: 200px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .result-category.shoot { border-top: 5px solid #dc3545; }
+        .result-category.shag { border-top: 5px solid #ff6b6b; }
+        .result-category.marry { border-top: 5px solid #28a745; }
+
+        .result-category h4 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .result-category.shoot h4 { color: #dc3545; }
+        .result-category.shag h4 { color: #ff6b6b; }
+        .result-category.marry h4 { color: #28a745; }
+
+        .result-image {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .scoreboard {
+            background: linear-gradient(45deg, #fff8e1, #f8f9fa);
+            border: 2px solid #ffc107;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .round-indicator {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .score-list {
+            margin: 20px 0;
+        }
+
+        .score-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .score-item.leader {
+            border: 2px solid #ffc107;
+            background: linear-gradient(45deg, #fff8e1, #ffffff);
+        }
+
+        .player-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .player-score {
+            font-size: 18px;
+            font-weight: bold;
+            color: #f57c00;
+        }
+
+        .waiting-next {
+            background: linear-gradient(45deg, #e3f2fd, #f8f9fa);
+            border: 2px solid #2196f3;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
+        }
+
+        .game-end-screen {
+            background: linear-gradient(45deg, #f3e5f5, #f8f9fa);
+            border: 2px solid #9c27b0;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+
+        .winner-announcement {
+            font-size: 32px;
+            font-weight: bold;
+            color: #6a1b9a;
+            margin-bottom: 20px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .instructions-content {
+            text-align: left;
+            line-height: 1.6;
+        }
+
+        .instructions-content h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .instructions-content h3 {
+            color: #333;
+            margin: 1.5rem 0 0.5rem 0;
+        }
+
+        .instructions-content ul {
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        .participant-count {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+                margin: 10px;
+            }
+
+            .images-display {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .game-image {
+                width: 150px;
+                height: 150px;
+            }
+
+            .drop-zones {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .drop-zone {
+                width: 200px;
+                height: 250px;
+            }
+
+            .result-categories {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status connecting">
+        Connecting... <div class="loading"></div>
+    </div>
+
+    <!-- Home Page -->
+    <div id="homePage" class="container">
+        <h1>🎯 Shoot Shag Marry</h1>
+        
+        <div id="messageContainer"></div>
+        
+        <div class="input-group">
+            <input type="text" id="usernameInput" placeholder="Enter your username" maxlength="20">
+        </div>
+        
+        <button class="btn" onclick="createLobby()" id="createBtn" disabled>
+            Create Lobby
+        </button>
+        
+        <div class="input-group">
+            <input type="text" id="joinCode" placeholder="Enter lobby code (6 characters)" maxlength="6" style="text-transform: uppercase;">
+            <button class="btn" onclick="joinLobby()" id="joinBtn" disabled>Join Lobby</button>
+        </div>
+
+        <button class="btn" onclick="showInstructions()">📖 Instructions</button>
+    </div>
+
+    <!-- Lobby Page -->
+    <div id="lobbyPage" class="container hidden">
+        <h1>🏠 Lobby</h1>
+        
+        <div class="lobby-code">
+            <div>📤 Share this code with others:</div>
+            <div class="code-display" id="lobbyCodeDisplay">------</div>
+            <button class="btn copy-btn" onclick="copyCode()">📋 Copy Code</button>
+        </div>
+
+        <div class="participants">
+            <h3>👥 Participants <span class="participant-count" id="participantCount">0</span></h3>
+            <div id="participantsList"></div>
+        </div>
+
+        <button class="btn" onclick="startGame()" id="startBtn" style="display: none;">
+            🚀 Start Game
+        </button>
+        <button class="btn" onclick="leaveLobby()">🚪 Leave Lobby</button>
+    </div>
+
+    <!-- Game Page -->
+    <div id="gamePage" class="container game hidden">
+        <h1 id="gameTitle">🎯 Shoot Shag Marry</h1>
+        
+        <!-- Round Indicator -->
+        <div id="roundIndicator" class="round-indicator hidden">
+            Round <span id="currentRound">1</span> of 30
+        </div>
+        
+        <!-- Images Display -->
+        <div id="imagesContainer" class="images-display hidden">
+            <img id="gameImage1" class="game-image" src="" alt="Option 1" draggable="true">
+            <img id="gameImage2" class="game-image" src="" alt="Option 2" draggable="true">
+            <img id="gameImage3" class="game-image" src="" alt="Option 3" draggable="true">
+        </div>
+
+        <!-- Timer Display -->
+        <div id="timerContainer" class="timer-display hidden">
+            <div id="phaseTitle" class="phase-title"></div>
+            <div id="timer" class="timer">00:00</div>
+            <div id="timerDescription"></div>
+        </div>
+
+        <!-- Discussion Phase -->
+        <div id="discussionInfo" class="discussion-info hidden">
+            💬 Discuss with other players which person you would shoot, shag, or marry!
+        </div>
+
+        <!-- Voting Interface -->
+        <div id="votingInterface" class="voting-interface hidden">
+            <h3>Drag the images to your choices:</h3>
+            <div class="drop-zones">
+                <div class="drop-zone shoot" data-category="shoot">
+                    <h3>💥 SHOOT</h3>
+                    <div class="drop-hint">Drop image here</div>
+                </div>
+                <div class="drop-zone shag" data-category="shag">
+                    <h3>💋 SHAG</h3>
+                    <div class="drop-hint">Drop image here</div>
+                </div>
+                <div class="drop-zone marry" data-category="marry">
+                    <h3>💍 MARRY</h3>
+                    <div class="drop-hint">Drop image here</div>
+                </div>
+            </div>
+            <button class="btn lock-button" onclick="lockInVote()" id="lockBtn" disabled>
+                🔒 Lock In Your Choices
+            </button>
+        </div>
+
+        <!-- Vote Results -->
+        <div id="voteResults" class="vote-results hidden">
+            <h3>📊 Majority Results</h3>
+            <div id="resultCategories" class="result-categories"></div>
+            <div id="resultMessage"></div>
+        </div>
+
+        <!-- Scoreboard -->
+        <div id="scoreboard" class="scoreboard hidden">
+            <h3>🏆 Current Scores</h3>
+            <div id="scoreList" class="score-list"></div>
+        </div>
+
+        <!-- Waiting for next round -->
+        <div id="waitingForNext" class="waiting-next hidden">
+            <div>🔄 Preparing next round...</div>
+        </div>
+
+        <!-- Game End -->
+        <div id="gameEndScreen" class="game-end-screen hidden">
+            <div class="winner-announcement">🎉 Game Complete!</div>
+            <div id="finalScores" class="score-list"></div>
+            <button class="btn" onclick="restartGame()" id="restartBtn" style="display: none;">
+                🔄 Play Again
+            </button>
+        </div>
+
+        <button class="btn" onclick="leaveGame()" id="leaveGameBtn">🚪 Leave Game</button>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div id="instructionsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeInstructions()">&times;</span>
+            <div class="instructions-content">
+                <h2>🎯 Shoot Shag Marry - Instructions</h2>
+                
+                <h3>📋 How to Get Started</h3>
+                <ul>
+                    <li><strong>Enter Username:</strong> Type your username (at least 2 characters)</li>
+                    <li><strong>Create Lobby:</strong> Click "Create Lobby" to start a new game room</li>
+                    <li><strong>Join Lobby:</strong> Enter a 6-character lobby code to join an existing game</li>
+                </ul>
+
+                <h3>🎯 Game Flow</h3>
+                <ul>
+                    <li><strong>30 Rounds:</strong> The game consists of 30 rounds</li>
+                    <li><strong>Three Images:</strong> Each round shows 3 different images</li>
+                    <li><strong>Discussion (60s):</strong> Players discuss which person they would shoot, shag, or marry</li>
+                    <li><strong>Voting (30s):</strong> Drag each image to your choice: Shoot, Shag, or Marry</li>
+                    <li><strong>Lock In:</strong> Click "Lock In Your Choices" or wait for timer to run out</li>
+                    <li><strong>Results:</strong> See the majority choices and earn points</li>
+                </ul>
+
+                <h3>🏆 Scoring System</h3>
+                <ul>
+                    <li><strong>Complete All Three:</strong> You must place all 3 images to get points</li>
+                    <li><strong>Lock In Required:</strong> You must lock in your choices or they won't count</li>
+                    <li><strong>Majority Wins:</strong> If your choices match the majority for all 3 images, you get +1 point</li>
+                    <li><strong>Incomplete = 0 Points:</strong> Missing any choice or not locking in = no points</li>
+                </ul>
+
+                <h3>🎮 How to Play</h3>
+                <ul>
+                    <li><strong>Drag & Drop:</strong> Drag images from the top to the Shoot/Shag/Marry boxes</li>
+                    <li><strong>Change Your Mind:</strong> You can move images between boxes until you lock in</li>
+                    <li><strong>Lock In:</strong> Click the lock button when you're satisfied with your choices</li>
+                    <li><strong>Time Limit:</strong> If time runs out without locking in, you get no points</li>
+                </ul>
+
+                <h3>💡 Tips</h3>
+                <ul>
+                    <li>Try to predict what the majority will choose during discussion!</li>
+                    <li>Make sure to place all 3 images before locking in</li>
+                    <li>The game is mobile-friendly with touch drag & drop</li>
+                    <li>Images can repeat across rounds</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.8.1/socket.io.js"></script>
+    
+    <script>
+        // Game state
+        let currentLobby = null;
+        let isHost = false;
+        let currentUsername = '';
+        let gameState = null;
+        let currentVote = { shoot: null, shag: null, marry: null };
+        let isVoteLocked = false;
+        let draggedImage = null;
+
+        // Socket.IO connection
+        const socket = io({
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            timeout: 20000
+        });
+
+        // UI Elements
+        const connectionStatus = document.getElementById('connectionStatus');
+        const messageContainer = document.getElementById('messageContainer');
+        const usernameInput = document.getElementById('usernameInput');
+        const joinCodeInput = document.getElementById('joinCode');
+        const createBtn = document.getElementById('createBtn');
+        const joinBtn = document.getElementById('joinBtn');
+
+        // Socket event listeners
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            updateConnectionStatus('connected');
+            checkInputs();
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            updateConnectionStatus('disconnected');
+        });
+
+        socket.on('lobby-updated', (lobby) => {
+            currentLobby = lobby;
+            updateLobbyDisplay();
+        });
+
+        socket.on('game-started', (data) => {
+            gameState = data.gameState;
+            showGamePage();
+            showSuccess('Game is starting!');
+        });
+
+        socket.on('game-phase-update', (data) => {
+            updateGamePhase(data);
+        });
+
+        socket.on('images-selected', (data) => {
+            displayImages(data.images);
+        });
+
+        socket.on('game-timer', (data) => {
+            updateTimer(data.timeRemaining);
+        });
+
+        socket.on('round-results', (data) => {
+            displayRoundResults(data);
+        });
+
+        socket.on('scoreboard-update', (data) => {
+            displayScoreboard(data.scores);
+        });
+
+        socket.on('game-ended', (data) => {
+            displayGameEnd(data);
+        });
+
+        socket.on('lobby-closed', () => {
+            showError('Lobby was closed by the host.');
+            setTimeout(() => leaveLobby(), 2000);
+        });
+
+        // Connection status management
+        function updateConnectionStatus(status) {
+            connectionStatus.className = `connection-status ${status}`;
+            switch(status) {
+                case 'connected':
+                    connectionStatus.innerHTML = '🟢 Connected';
+                    break;
+                case 'connecting':
+                    connectionStatus.innerHTML = '🟡 Connecting... <div class="loading"></div>';
+                    break;
+                case 'disconnected':
+                    connectionStatus.innerHTML = '🔴 Disconnected';
+                    break;
+            }
+        }
+
+        // Message management
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            messageContainer.innerHTML = '';
+            messageContainer.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = message;
+            messageContainer.innerHTML = '';
+            messageContainer.appendChild(successDiv);
+            setTimeout(() => successDiv.remove(), 3000);
+        }
+
+        // Input validation
+        function checkInputs() {
+            const username = usernameInput.value.trim();
+            const joinCode = joinCodeInput.value.trim();
+            const isConnected = socket.connected;
+            
+            createBtn.disabled = !username || username.length < 2 || !isConnected;
+            joinBtn.disabled = !username || username.length < 2 || !joinCode || joinCode.length !== 6 || !isConnected;
+        }
+
+        // Event listeners
+        usernameInput.addEventListener('input', checkInputs);
+        joinCodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+            checkInputs();
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', checkInputs);
+
+        // Create lobby
+        async function createLobby() {
+            const username = usernameInput.value.trim();
+            
+            if (!username || username.length < 2) {
+                showError('Username must be at least 2 characters long');
+                return;
+            }
+
+            try {
+                createBtn.disabled = true;
+                createBtn.innerHTML = 'Creating... <div class="loading"></div>';
+                
+                const response = await fetch('/api/lobby/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentLobby = data.lobby;
+                    currentUsername = username;
+                    isHost = true;
+                    
+                    socket.emit('join-lobby', { code: data.code, username });
+                    showLobbyPage();
+                    showSuccess(`Lobby ${data.code} created successfully!`);
+                } else {
+                    showError(data.error || 'Failed to create lobby');
+                }
+            } catch (error) {
+                console.error('Error creating lobby:', error);
+                showError('Failed to create lobby. Please try again.');
+            } finally {
+                createBtn.disabled = false;
+                createBtn.innerHTML = 'Create Lobby';
+                checkInputs();
+            }
+        }
+
+        // Join lobby
+        async function joinLobby() {
+            const username = usernameInput.value.trim();
+            const code = joinCodeInput.value.toUpperCase().trim();
+            
+            if (!username || username.length < 2) {
+                showError('Username must be at least 2 characters long');
+                return;
+            }
+            
+            if (!code || code.length !== 6) {
+                showError('Please enter a valid 6-character lobby code');
+                return;
+            }
+
+            try {
+                joinBtn.disabled = true;
+                joinBtn.innerHTML = 'Joining... <div class="loading"></div>';
+                
+                const response = await fetch('/api/lobby/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, username }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentLobby = data.lobby;
+                    currentUsername = username;
+                    isHost = false;
+                    
+                    socket.emit('join-lobby', { code, username });
+                    showSuccess(`Joined lobby ${code} successfully!`);
+                    showLobbyPage();
+                } else {
+                    showError(data.error || 'Failed to join lobby');
+                }
+            } catch (error) {
+                console.error('Error joining lobby:', error);
+                showError('Failed to join lobby. Please try again.');
+            } finally {
+                joinBtn.disabled = false;
+                joinBtn.innerHTML = 'Join Lobby';
+                checkInputs();
+            }
+        }
+
+        // Show pages
+        function showLobbyPage() {
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('lobbyPage').classList.remove('hidden');
+            document.getElementById('gamePage').classList.add('hidden');
+            updateLobbyDisplay();
+        }
+
+        function showGamePage() {
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('lobbyPage').classList.add('hidden');
+            document.getElementById('gamePage').classList.remove('hidden');
+            hideAllGameSections();
+        }
+
+        // Update lobby display
+        function updateLobbyDisplay() {
+            if (!currentLobby) return;
+            
+            document.getElementById('lobbyCodeDisplay').textContent = currentLobby.code;
+            
+            const connectedCount = currentLobby.participants.filter(p => p.connected !== false).length;
+            document.getElementById('participantCount').textContent = connectedCount;
+            
+            const participantsList = document.getElementById('participantsList');
+            participantsList.innerHTML = '';
+            
+            currentLobby.participants.forEach(participant => {
+                const div = document.createElement('div');
+                div.className = `participant ${participant.isHost ? 'host' : ''} ${participant.connected === false ? 'disconnected' : ''}`;
+                div.innerHTML = `
+                    ${participant.isHost ? '👑' : '👤'} ${participant.username} 
+                    ${participant.isHost ? '<span style="font-size: 0.8em; color: #ffc107;">(Host)</span>' : ''}
+                    ${participant.connected === false ? '<span style="font-size: 0.8em; color: #dc3545;">(Disconnected)</span>' : ''}
+                `;
+                participantsList.appendChild(div);
+            });
+            
+            document.getElementById('startBtn').style.display = isHost ? 'inline-block' : 'none';
+            
+            if (isHost) {
+                const startBtn = document.getElementById('startBtn');
+                startBtn.disabled = connectedCount < 2;
+            }
+        }
+
+        // Game phase management
+        function updateGamePhase(data) {
+            hideAllGameSections();
+            
+            if (data.roundNumber) {
+                document.getElementById('currentRound').textContent = data.roundNumber;
+                document.getElementById('roundIndicator').classList.remove('hidden');
+            }
+            
+            switch(data.phase) {
+                case 'discussion':
+                    showDiscussionPhase(data);
+                    break;
+                case 'voting':
+                    showVotingPhase();
+                    break;
+                case 'results':
+                    showResultsPhase();
+                    break;
+                case 'scoreboard':
+                    showScoreboardPhase();
+                    break;
+                case 'waiting':
+                    showWaitingPhase();
+                    break;
+            }
+        }
+
+        function hideAllGameSections() {
+            const sections = [
+                'timerContainer', 'discussionInfo', 'votingInterface', 
+                'voteResults', 'scoreboard', 'waitingForNext', 'gameEndScreen'
+            ];
+            
+            sections.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+        }
+
+        function showDiscussionPhase(data) {
+            document.getElementById('imagesContainer').classList.remove('hidden');
+            document.getElementById('timerContainer').classList.remove('hidden');
+            document.getElementById('discussionInfo').classList.remove('hidden');
+            
+            document.getElementById('phaseTitle').textContent = `Round ${data.roundNumber} - Discussion Time`;
+            document.getElementById('timerDescription').textContent = 'Discuss which person you would shoot, shag, or marry!';
+        }
+
+        function showVotingPhase() {
+            document.getElementById('imagesContainer').classList.remove('hidden');
+            document.getElementById('timerContainer').classList.remove('hidden');
+            document.getElementById('votingInterface').classList.remove('hidden');
+            
+            document.getElementById('phaseTitle').textContent = 'Voting Time';
+            document.getElementById('timerDescription').textContent = 'Drag images to your choices and lock them in!';
+            
+            resetVoting();
+            setupDragAndDrop();
+        }
+
+        function showResultsPhase() {
+            document.getElementById('voteResults').classList.remove('hidden');
+        }
+
+        function showScoreboardPhase() {
+            document.getElementById('scoreboard').classList.remove('hidden');
+        }
+
+        function showWaitingPhase() {
+            document.getElementById('waitingForNext').classList.remove('hidden');
+        }
+
+        // Image display
+        function displayImages(images) {
+            document.getElementById('gameImage1').src = images[0];
+            document.getElementById('gameImage2').src = images[1];
+            document.getElementById('gameImage3').src = images[2];
+            document.getElementById('imagesContainer').classList.remove('hidden');
+        }
+
+        // Timer management
+        function updateTimer(timeRemaining) {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            const timerElement = document.getElementById('timer');
+            timerElement.textContent = display;
+            
+            if (timeRemaining <= 10) {
+                timerElement.classList.add('urgent');
+            } else {
+                timerElement.classList.remove('urgent');
+            }
+        }
+
+        // Drag and Drop functionality
+        function setupDragAndDrop() {
+            const images = document.querySelectorAll('.game-image');
+            const dropZones = document.querySelectorAll('.drop-zone');
+
+            images.forEach(image => {
+                image.addEventListener('dragstart', handleDragStart);
+                image.addEventListener('dragend', handleDragEnd);
+            });
+
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', handleDragOver);
+                zone.addEventListener('dragenter', handleDragEnter);
+                zone.addEventListener('dragleave', handleDragLeave);
+                zone.addEventListener('drop', handleDrop);
+            });
+        }
+
+        function handleDragStart(e) {
+            draggedImage = e.target;
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            draggedImage = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            if (!draggedImage || isVoteLocked) return;
+            
+            const dropZone = e.currentTarget;
+            const category = dropZone.dataset.category;
+            
+            // Remove image from previous category if it exists
+            Object.keys(currentVote).forEach(key => {
+                if (currentVote[key] === draggedImage.src) {
+                    currentVote[key] = null;
+                    const prevZone = document.querySelector(`.drop-zone[data-category="${key}"]`);
+                    const prevImage = prevZone.querySelector('.dropped-image');
+                    if (prevImage) {
+                        prevImage.remove();
+                        const hint = prevZone.querySelector('.drop-hint');
+                        if (!hint) {
+                            const newHint = document.createElement('div');
+                            newHint.className = 'drop-hint';
+                            newHint.textContent = 'Drop image here';
+                            prevZone.appendChild(newHint);
+                        }
+                    }
+                }
+            });
+            
+            // Add image to new category
+            currentVote[category] = draggedImage.src;
+            
+            // Remove existing image and hint from drop zone
+            const existingImage = dropZone.querySelector('.dropped-image');
+            const existingHint = dropZone.querySelector('.drop-hint');
+            if (existingImage) existingImage.remove();
+            if (existingHint) existingHint.remove();
+            
+            // Add new image to drop zone
+            const newImage = document.createElement('img');
+            newImage.src = draggedImage.src;
+            newImage.className = 'dropped-image';
+            dropZone.appendChild(newImage);
+            
+            checkVoteCompletion();
+        }
+
+        function resetVoting() {
+            currentVote = { shoot: null, shag: null, marry: null };
+            isVoteLocked = false;
+            
+            // Clear all drop zones
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                const image = zone.querySelector('.dropped-image');
+                const hint = zone.querySelector('.drop-hint');
+                if (image) image.remove();
+                if (!hint) {
+                    const newHint = document.createElement('div');
+                    newHint.className = 'drop-hint';
+                    newHint.textContent = 'Drop image here';
+                    zone.appendChild(newHint);
+                }
+            });
+            
+            document.getElementById('lockBtn').disabled = true;
+        }
+
+        function checkVoteCompletion() {
+            const isComplete = currentVote.shoot && currentVote.shag && currentVote.marry;
+            document.getElementById('lockBtn').disabled = !isComplete || isVoteLocked;
+        }
+
+        function lockInVote() {
+            if (isVoteLocked) return;
+            
+            const isComplete = currentVote.shoot && currentVote.shag && currentVote.marry;
+            if (!isComplete) {
+                showError('Please place all 3 images before locking in!');
+                return;
+            }
+            
+            isVoteLocked = true;
+            document.getElementById('lockBtn').disabled = true;
+            document.getElementById('lockBtn').innerHTML = '✅ Locked In!';
+            
+            socket.emit('cast-vote', {
+                code: currentLobby.code,
+                username: currentUsername,
+                vote: currentVote
+            });
+            
+            showSuccess('Your choices have been locked in!');
+        }
+
+        // Display functions
+        function displayRoundResults(data) {
+            const categories = document.getElementById('resultCategories');
+            categories.innerHTML = '';
+            
+            ['shoot', 'shag', 'marry'].forEach(category => {
+                const div = document.createElement('div');
+                div.className = `result-category ${category}`;
+                
+                const title = category === 'shoot' ? '💥 SHOOT' : 
+                             category === 'shag' ? '💋 SHAG' : '💍 MARRY';
+                
+                div.innerHTML = `
+                    <h4>${title}</h4>
+                    <img src="${data.majorityChoices[category]}" alt="${category}" class="result-image">
+                `;
+                categories.appendChild(div);
+            });
+            
+            const resultMessage = document.getElementById('resultMessage');
+            const pointsAwarded = data.pointsAwarded || 0;
+            resultMessage.innerHTML = `
+                <div style="font-size: 18px; margin-top: 20px;">
+                    <strong>${pointsAwarded} players</strong> matched the majority on all three choices and earned +1 point!
+                </div>
+            `;
+        }
+
+        function displayScoreboard(scores) {
+            const scoreList = document.getElementById('scoreList');
+            const sortedScores = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            
+            scoreList.innerHTML = '';
+            sortedScores.forEach(([username, score], index) => {
+                const scoreItem = document.createElement('div');
+                scoreItem.className = `score-item ${index === 0 ? 'leader' : ''}`;
+                scoreItem.innerHTML = `
+                    <span class="player-name">${index === 0 ? '👑 ' : ''}${username}</span>
+                    <span class="player-score">${score} pts</span>
+                `;
+                scoreList.appendChild(scoreItem);
+            });
+        }
+
+        function displayGameEnd(data) {
+            hideAllGameSections();
+            document.getElementById('gameEndScreen').classList.remove('hidden');
+            
+            const finalScores = document.getElementById('finalScores');
+            const sortedScores = Object.entries(data.finalScores).sort((a, b) => b[1] - a[1]);
+            
+            finalScores.innerHTML = '';
+            sortedScores.forEach(([username, score], index) => {
+                const scoreItem = document.createElement('div');
+                scoreItem.className = `score-item ${index === 0 ? 'leader' : ''}`;
+                scoreItem.innerHTML = `
+                    <span class="player-name">
+                        ${index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : ''}
+                        ${username}
+                    </span>
+                    <span class="player-score">${score} pts</span>
+                `;
+                finalScores.appendChild(scoreItem);
+            });
+            
+            if (isHost) {
+                document.getElementById('restartBtn').style.display = 'inline-block';
+            }
+        }
+
+        // Copy lobby code
+        function copyCode() {
+            const code = currentLobby.code;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Copied!';
+                btn.style.background = '#20c997';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = '#28a745';
+                }, 2000);
+            }).catch(() => {
+                showSuccess('Code copied to clipboard!');
+            });
+        }
+
+        // Start game
+        function startGame() {
+            if (!isHost) {
+                showError('Only the host can start the game');
+                return;
+            }
+            
+            if (currentLobby.participants.length < 2) {
+                showError('You need at least 2 participants to start the game');
+                return;
+            }
+            
+            socket.emit('start-game', { code: currentLobby.code, username: currentUsername });
+        }
+
+        // Restart game
+        function restartGame() {
+            if (isHost) {
+                socket.emit('restart-game', { code: currentLobby.code });
+            } else {
+                showError('Only the host can restart the game');
+            }
+        }
+
+        // Leave game/lobby
+        function leaveGame() {
+            leaveLobby();
+        }
+
+        function leaveLobby() {
+            if (currentLobby) {
+                socket.emit('leave-lobby', { code: currentLobby.code, username: currentUsername });
+            }
+            
+            currentLobby = null;
+            currentUsername = '';
+            isHost = false;
+            gameState = null;
+            
+            document.getElementById('lobbyPage').classList.add('hidden');
+            document.getElementById('gamePage').classList.add('hidden');
+            document.getElementById('homePage').classList.remove('hidden');
+            
+            joinCodeInput.value = '';
+            usernameInput.value = '';
+            messageContainer.innerHTML = '';
+            checkInputs();
+        }
+
+        // Instructions modal
+        function showInstructions() {
+            document.getElementById('instructionsModal').style.display = 'block';
+        }
+
+        function closeInstructions() {
+            document.getElementById('instructionsModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const instructionsModal = document.getElementById('instructionsModal');
+            if (event.target === instructionsModal) {
+                instructionsModal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
