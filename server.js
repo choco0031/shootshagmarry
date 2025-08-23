@@ -225,16 +225,16 @@ io.on('connection', (socket) => {
     });
     
     socket.on('cast-vote', (data) => {
-        const { code, username, vote } = data;
+        const { code, username, vote, lockedIn } = data;
         const gameState = gameStates.get(code);
         
-        if (gameState && gameState.phase === 'voting') {
-            // Validate vote has all three choices (allow overwriting previous votes)
+        if (gameState && gameState.phase === 'voting' && lockedIn) {
+            // Only accept votes that are locked in and have all three choices
             if (vote.shoot && vote.shag && vote.marry) {
-                gameState.votes[username] = vote;
-                console.log(`Vote cast by ${username}:`, vote);
+                gameState.votes[username] = { ...vote, lockedIn: true };
+                console.log(`Locked-in vote cast by ${username}:`, vote);
             } else {
-                console.log(`Incomplete vote from ${username}:`, vote);
+                console.log(`Incomplete locked-in vote from ${username}:`, vote);
             }
         }
     });
@@ -389,30 +389,33 @@ function calculateResults(code) {
     
     if (!gameState || !lobby) return;
     
-    // Count votes for each category from connected players who completed all 3 choices
+    // Count votes for each category from connected players who locked in all 3 choices
     const categoryVotes = {
         shoot: {},
         shag: {},
         marry: {}
     };
     
-    const validVoters = [];
+    const validLockedInVoters = [];
     
     lobby.participants.forEach(participant => {
         if (participant.connected) {
             const vote = gameState.votes[participant.username];
-            if (vote && vote.shoot && vote.shag && vote.marry) {
-                validVoters.push(participant.username);
+            // Only count votes that are locked in and complete
+            if (vote && vote.lockedIn && vote.shoot && vote.shag && vote.marry) {
+                validLockedInVoters.push(participant.username);
                 
                 // Count votes for each image in each category
                 categoryVotes.shoot[vote.shoot] = (categoryVotes.shoot[vote.shoot] || 0) + 1;
                 categoryVotes.shag[vote.shag] = (categoryVotes.shag[vote.shag] || 0) + 1;
                 categoryVotes.marry[vote.marry] = (categoryVotes.marry[vote.marry] || 0) + 1;
+            } else {
+                console.log(`${participant.username} did not lock in or had incomplete vote`);
             }
         }
     });
     
-    console.log('Valid voters:', validVoters);
+    console.log('Valid locked-in voters:', validLockedInVoters);
     console.log('Category votes:', categoryVotes);
     
     // Find majority choice for each category
@@ -430,7 +433,7 @@ function calculateResults(code) {
             }
         });
         
-        // If no votes for this category, pick the first image as default
+        // If no locked-in votes for this category, pick the first image as default
         if (!majorityImage && gameState.currentImages.length > 0) {
             majorityImage = gameState.currentImages[0];
         }
@@ -439,13 +442,13 @@ function calculateResults(code) {
         console.log(`Majority for ${category}: ${majorityImage} with ${maxVotes} votes`);
     });
     
-    // Award points to players who matched all three majority choices
+    // Award points to locked-in players who matched all three majority choices
     let pointsAwarded = 0;
     const winners = [];
     
-    validVoters.forEach(username => {
+    validLockedInVoters.forEach(username => {
         const vote = gameState.votes[username];
-        console.log(`Checking ${username}'s vote:`, vote);
+        console.log(`Checking ${username}'s locked-in vote:`, vote);
         console.log(`Majority choices:`, majorityChoices);
         
         const shootMatch = vote.shoot === majorityChoices.shoot;
@@ -471,7 +474,7 @@ function calculateResults(code) {
     io.to(code).emit('round-results', {
         majorityChoices: majorityChoices,
         pointsAwarded: pointsAwarded,
-        totalVoters: validVoters.length,
+        totalVoters: validLockedInVoters.length,
         winners: winners
     });
     
