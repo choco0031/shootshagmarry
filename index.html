@@ -649,8 +649,11 @@
                 </div>
             </div>
             <div id="voteStatus" style="margin: 20px 0; font-size: 16px; color: #666;">
-                Place all 3 images to be eligible for points
+                Place all 3 images and lock in to get points
             </div>
+            <button class="btn lock-button" onclick="lockInVote()" id="lockBtn" disabled>
+                🔒 Lock In Your Choices
+            </button>
         </div>
 
         <!-- Vote Results -->
@@ -710,17 +713,17 @@
                 <h3>🏆 Scoring System</h3>
                 <ul>
                     <li><strong>Complete All Three:</strong> You must place all 3 images to get points</li>
-                    <li><strong>Automatic Submission:</strong> Votes are automatically submitted when the timer runs out</li>
+                    <li><strong>Lock In Required:</strong> You must lock in your choices or they won't count</li>
                     <li><strong>Majority Wins:</strong> If your choices match the majority for all 3 images, you get +1 point</li>
-                    <li><strong>Incomplete = 0 Points:</strong> Missing any choice = no points for that round</li>
+                    <li><strong>Incomplete or Unlocked = 0 Points:</strong> Missing any choice or not locking in = no points</li>
                 </ul>
 
                 <h3>🎮 How to Play</h3>
                 <ul>
                     <li><strong>Drag & Drop:</strong> Drag images from the top to the Shoot/Shag/Marry boxes</li>
-                    <li><strong>Change Anytime:</strong> You can move images between boxes throughout the 30 seconds</li>
-                    <li><strong>Auto-Submit:</strong> Your vote is automatically submitted when time runs out</li>
-                    <li><strong>All 3 Required:</strong> Place all 3 images to be eligible for points</li>
+                    <li><strong>Change Your Mind:</strong> You can move images between boxes until you lock in</li>
+                    <li><strong>Lock In:</strong> Click the lock button when you're satisfied with your choices</li>
+                    <li><strong>Time Limit:</strong> You have 30 seconds to place and lock in your votes</li>
                 </ul>
 
                 <h3>💡 Tips</h3>
@@ -743,6 +746,7 @@
         let currentUsername = '';
         let gameState = null;
         let currentVote = { shoot: null, shag: null, marry: null };
+        let isVoteLocked = false;
         let draggedImage = null;
 
         // Socket.IO connection
@@ -796,11 +800,6 @@
 
         socket.on('game-timer', (data) => {
             updateTimer(data.timeRemaining);
-            
-            // Auto-submit vote when voting timer reaches 0
-            if (data.timeRemaining === 0 && gameState && gameState.phase === 'voting') {
-                submitVoteAutomatically();
-            }
         });
 
         socket.on('round-results', (data) => {
@@ -1065,7 +1064,7 @@
             document.getElementById('votingInterface').classList.remove('hidden');
             
             document.getElementById('phaseTitle').textContent = 'Voting Time';
-            document.getElementById('timerDescription').textContent = 'Drag images to your choices - all 3 must be placed!';
+            document.getElementById('timerDescription').textContent = 'Drag images to your choices and lock them in!';
             
             resetVoting();
             setupDragAndDrop();
@@ -1159,7 +1158,7 @@
             e.preventDefault();
             e.currentTarget.classList.remove('drag-over');
             
-            if (!draggedImage) return;
+            if (!draggedImage || isVoteLocked) return;
             
             const dropZone = e.currentTarget;
             const category = dropZone.dataset.category;
@@ -1202,11 +1201,12 @@
             addDragToImage(newImage); // Make the dropped image draggable
             dropZone.appendChild(newImage);
             
-            updateVoteStatus();
+            checkVoteCompletion();
         }
 
         function resetVoting() {
             currentVote = { shoot: null, shag: null, marry: null };
+            isVoteLocked = false;
             
             // Clear all drop zones
             document.querySelectorAll('.drop-zone').forEach(zone => {
@@ -1221,6 +1221,17 @@
                 }
             });
             
+            // Reset button text and state
+            const lockBtn = document.getElementById('lockBtn');
+            lockBtn.disabled = true;
+            lockBtn.innerHTML = '🔒 Lock In Your Choices';
+            
+            updateVoteStatus();
+        }
+
+        function checkVoteCompletion() {
+            const isComplete = currentVote.shoot && currentVote.shag && currentVote.marry;
+            document.getElementById('lockBtn').disabled = !isComplete || isVoteLocked;
             updateVoteStatus();
         }
 
@@ -1228,29 +1239,40 @@
             const placedCount = Object.values(currentVote).filter(v => v !== null).length;
             const statusElement = document.getElementById('voteStatus');
             
-            if (placedCount === 3) {
-                statusElement.innerHTML = '✅ All 3 images placed - you\'ll get points if you match the majority!';
+            if (isVoteLocked) {
+                statusElement.innerHTML = '✅ Your choices are locked in!';
                 statusElement.style.color = '#28a745';
+            } else if (placedCount === 3) {
+                statusElement.innerHTML = '🔓 All 3 images placed - click "Lock In" to finalize your vote!';
+                statusElement.style.color = '#ff9800';
             } else {
-                statusElement.innerHTML = `⚠️ ${placedCount}/3 images placed - place all 3 to be eligible for points`;
+                statusElement.innerHTML = `⚠️ ${placedCount}/3 images placed - place all 3 and lock in to get points`;
                 statusElement.style.color = '#dc3545';
             }
         }
 
-        // Auto-submit vote when timer runs out
-        function submitVoteAutomatically() {
-            const isComplete = currentVote.shoot && currentVote.shag && currentVote.marry;
+        function lockInVote() {
+            if (isVoteLocked) return;
             
-            if (isComplete) {
-                socket.emit('cast-vote', {
-                    code: currentLobby.code,
-                    username: currentUsername,
-                    vote: currentVote
-                });
-                console.log('Vote auto-submitted:', currentVote);
-            } else {
-                console.log('Vote not submitted - incomplete:', currentVote);
+            const isComplete = currentVote.shoot && currentVote.shag && currentVote.marry;
+            if (!isComplete) {
+                showError('Please place all 3 images before locking in!');
+                return;
             }
+            
+            isVoteLocked = true;
+            document.getElementById('lockBtn').disabled = true;
+            document.getElementById('lockBtn').innerHTML = '✅ Locked In!';
+            
+            socket.emit('cast-vote', {
+                code: currentLobby.code,
+                username: currentUsername,
+                vote: currentVote,
+                lockedIn: true
+            });
+            
+            updateVoteStatus();
+            showSuccess('Your choices have been locked in!');
         }
 
         // Display functions
