@@ -410,6 +410,9 @@ function calculateResults(code) {
         }
     });
     
+    console.log('Valid voters:', validVoters);
+    console.log('Category votes:', categoryVotes);
+    
     // Find majority choice for each category
     const majorityChoices = {};
     ['shoot', 'shag', 'marry'].forEach(category => {
@@ -417,13 +420,11 @@ function calculateResults(code) {
         let maxVotes = 0;
         let majorityImage = null;
         
+        // Find the image with the most votes
         Object.entries(votes).forEach(([image, count]) => {
             if (count > maxVotes) {
                 maxVotes = count;
                 majorityImage = image;
-            } else if (count === maxVotes) {
-                // In case of tie, no majority
-                majorityImage = null;
             }
         });
         
@@ -433,19 +434,34 @@ function calculateResults(code) {
         }
         
         majorityChoices[category] = majorityImage;
+        console.log(`Majority for ${category}: ${majorityImage} with ${maxVotes} votes`);
     });
     
     // Award points to players who matched all three majority choices
     let pointsAwarded = 0;
+    const winners = [];
+    
     validVoters.forEach(username => {
         const vote = gameState.votes[username];
-        if (vote.shoot === majorityChoices.shoot && 
-            vote.shag === majorityChoices.shag && 
-            vote.marry === majorityChoices.marry) {
-            gameState.scores[username] += 1;
+        console.log(`Checking ${username}'s vote:`, vote);
+        console.log(`Majority choices:`, majorityChoices);
+        
+        const shootMatch = vote.shoot === majorityChoices.shoot;
+        const shagMatch = vote.shag === majorityChoices.shag;
+        const marryMatch = vote.marry === majorityChoices.marry;
+        
+        console.log(`${username} matches - shoot: ${shootMatch}, shag: ${shagMatch}, marry: ${marryMatch}`);
+        
+        if (shootMatch && shagMatch && marryMatch) {
+            gameState.scores[username] = (gameState.scores[username] || 0) + 1;
             pointsAwarded++;
+            winners.push(username);
+            console.log(`${username} gets a point! New score: ${gameState.scores[username]}`);
         }
     });
+    
+    console.log(`Points awarded to: ${winners.join(', ')}`);
+    console.log('Updated scores:', gameState.scores);
     
     gameState.phase = 'results';
     
@@ -453,7 +469,8 @@ function calculateResults(code) {
     io.to(code).emit('round-results', {
         majorityChoices: majorityChoices,
         pointsAwarded: pointsAwarded,
-        totalVoters: validVoters.length
+        totalVoters: validVoters.length,
+        winners: winners
     });
     
     setTimeout(() => {
