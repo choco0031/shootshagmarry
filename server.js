@@ -71,15 +71,25 @@ function generateLobbyCode() {
     return Math.random().toString(36).substr(2, 6).toUpperCase();
 }
 
-// Helper function to get 3 random images (can repeat)
+// Helper function to get 3 unique random images
 function getRandomImages() {
     if (gameImages.length < 3) return [];
     
     const selectedImages = [];
+    const availableImages = [...gameImages]; // Create a copy
+    
     for (let i = 0; i < 3; i++) {
-        const randomIndex = Math.floor(Math.random() * gameImages.length);
-        selectedImages.push(gameImages[randomIndex]);
+        if (availableImages.length === 0) break;
+        
+        const randomIndex = Math.floor(Math.random() * availableImages.length);
+        const selectedImage = availableImages[randomIndex];
+        selectedImages.push(selectedImage);
+        
+        // Remove selected image to avoid duplicates
+        availableImages.splice(randomIndex, 1);
     }
+    
+    console.log('Selected unique images:', selectedImages);
     return selectedImages;
 }
 
@@ -201,7 +211,7 @@ io.on('connection', (socket) => {
             const gameState = {
                 phase: 'discussion',
                 roundNumber: 1,
-                totalRounds: 30,
+                totalRounds: 25,
                 currentImages: [],
                 votes: {},
                 scores: {},
