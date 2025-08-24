@@ -609,7 +609,7 @@
         
         <!-- Round Indicator -->
         <div id="roundIndicator" class="round-indicator hidden">
-            Round <span id="currentRound">1</span> of 30
+            Round <span id="currentRound">1</span> of 25
         </div>
         
         <!-- Images Display -->
@@ -772,6 +772,15 @@
             console.log('Connected to server');
             updateConnectionStatus('connected');
             checkInputs();
+            
+            // Auto-reconnect if we have lobby info
+            if (currentLobby && currentUsername) {
+                console.log('Auto-reconnecting to lobby:', currentLobby.code);
+                socket.emit('join-lobby', { code: currentLobby.code, username: currentUsername });
+                setTimeout(() => {
+                    socket.emit('request-sync', { code: currentLobby.code });
+                }, 500);
+            }
         });
 
         socket.on('disconnect', () => {
@@ -1257,12 +1266,15 @@
             const isComplete = currentVote.shoot && currentVote.shag && currentVote.marry;
             if (!isComplete) {
                 showError('Please place all 3 images before locking in!');
+                console.log('Lock-in failed - incomplete vote:', currentVote);
                 return;
             }
             
             isVoteLocked = true;
             document.getElementById('lockBtn').disabled = true;
             document.getElementById('lockBtn').innerHTML = '✅ Locked In!';
+            
+            console.log('Locking in vote:', currentVote);
             
             socket.emit('cast-vote', {
                 code: currentLobby.code,
